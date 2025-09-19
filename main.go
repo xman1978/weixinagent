@@ -34,7 +34,6 @@ func main() {
 		log.Fatal("获取视频列表失败 ## ", err)
 	}
 
-	error_times := 0
 	for _, video := range *videoList {
 		fmt.Println("视频: ", video.ShortTitle, video.Description)
 		// fmt.Println("视频: ", video.ShortTitle, video.Description, video.ObjectId)
@@ -61,19 +60,14 @@ func main() {
 			replyComment, err := replyComment(cookies, video.ObjectId, comment, *replyContent)
 			if err != nil {
 				log.Println("回复评论失败 ## ", err)
-				error_times++
-				if error_times > 3 {
-					log.Fatal("回复评论失败次数超过3次，退出程序")
-				}
 				continue
 			}
 			fmt.Println("已回复，回复内容: ", replyComment.CommentContent)
 			fmt.Println("==========================================")
 
-			// 在 60 到 180 秒之间随机等待
-			fmt.Println("等待 60 到 180 秒之间随机等待...")
-			time.Sleep(time.Duration(rand.Intn(120)+60) * time.Second)
+			// 在 30 到 90 秒之间随机等待
+			fmt.Println("等待 30 到 60 秒之间随机等待...")
+			time.Sleep(time.Duration(rand.Intn(30)+30) * time.Second)
 		}
 	}
-
 }
