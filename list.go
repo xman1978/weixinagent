@@ -17,21 +17,22 @@ type VideoList struct {
 	Description string
 }
 
-func getVideoList(cookies []*network.Cookie) (*[]VideoList, error) {
+func getVideoList(cookies []*network.Cookie, pageSize int, currentPage int) (*[]VideoList, int, error) {
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-	url := "/micro/interaction/cgi-bin/mmfinderassistant-bin/post/post_list"
-	payload := `{"pageSize":50,"onlyUnread":false,"needAllCommentCount":true,"userpageType":13,"forMcn":false,"lastBuff":"","timestamp":"%s","_log_finder_uin":"%s","_log_finder_id":"","rawKeyBuff":null,"pluginSessionId":null,"scene":7,"reqScene":7}`
-	payload = fmt.Sprintf(payload, timestamp, finderUsername)
+	url := "/micro/content/cgi-bin/mmfinderassistant-bin/post/post_list"
+	payload := `{"pageSize":%d,"currentPage":%d,"onlyUnread":false,"needAllCommentCount":true,"userpageType":13,"forMcn":false,"lastBuff":"","timestamp":"%s","_log_finder_uin":"%s","_log_finder_id":"","rawKeyBuff":null,"pluginSessionId":null,"scene":7,"reqScene":7}`
+	payload = fmt.Sprintf(payload, pageSize, currentPage, timestamp, finderUsername)
 
 	bodyString, err := requestUrl(url, payload, cookies)
 	if err != nil {
-		return nil, fmt.Errorf("获取视频列表失败: %v", err)
+		return nil, 0, fmt.Errorf("获取视频列表失败: %v", err)
 	}
 
 	var v struct {
 		Data struct {
-			List []struct {
+			TotalCount int `json:"totalCount"`
+			List       []struct {
 				ObjectId   string `json:"objectId"`
 				CreateTime int64  `json:"createTime"`
 				Desc       struct {
@@ -47,7 +48,7 @@ func getVideoList(cookies []*network.Cookie) (*[]VideoList, error) {
 		} `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(*bodyString), &v); err != nil {
-		return nil, fmt.Errorf("解析 VideoList JSON失败: %v", err)
+		return nil, 0, fmt.Errorf("解析 VideoList JSON失败: %v", err)
 	}
 
 	var videoList []VideoList
@@ -61,5 +62,5 @@ func getVideoList(cookies []*network.Cookie) (*[]VideoList, error) {
 		})
 	}
 
-	return &videoList, nil
+	return &videoList, v.Data.TotalCount, nil
 }
