@@ -39,6 +39,7 @@ func main() {
 		Pages++
 	}
 
+	replyCount := 0
 	for currentPage := 1; currentPage <= Pages; currentPage++ {
 		for _, video := range *videoList {
 			fmt.Println("视频: ", video.ShortTitle, video.Description)
@@ -57,7 +58,7 @@ func main() {
 				}
 
 				fmt.Println("评论内容: ", comment.CommentContent)
-				replyContent, err := generateReplyContent(video.Description, comment.CommentContent)
+				replyContent, err := generateReplyContentV2(video.Description, comment.CommentContent)
 				if err != nil {
 					log.Fatal("生成回复内容失败 ## ", err)
 				}
@@ -68,6 +69,7 @@ func main() {
 					log.Println("回复评论失败 ## ", err)
 					continue
 				}
+				replyCount++
 				fmt.Println("已回复，回复内容: ", replyComment.CommentContent)
 				fmt.Println("==========================================")
 
@@ -76,6 +78,8 @@ func main() {
 				time.Sleep(time.Duration(rand.Intn(30)+30) * time.Second)
 			}
 		}
+
+		fmt.Printf("视频总数：%d，已成功回复评论数: %d\n", totalCount, replyCount)
 
 		if currentPage == Pages {
 			break
@@ -87,4 +91,5 @@ func main() {
 			log.Fatal("获取视频列表失败 ## ", err)
 		}
 	}
+
 }
