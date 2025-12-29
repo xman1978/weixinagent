@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	fyne.io/fyne/v2 v2.6.3 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20250910080747-cc2cfa0554c3 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect

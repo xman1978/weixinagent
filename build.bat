@@ -4,7 +4,7 @@ setlocal
 REM 设置 CGO 关闭，保证静态编译
 set CGO_ENABLED=0
 
-set VERSION=0.1.3
+set VERSION=0.1.5
 
 REM ================================
 REM Windows 64-bit

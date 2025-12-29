@@ -1,4 +1,6 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+fyne.io/fyne/v2 v2.6.3 h1:cvtM2KHeRuH+WhtHiA63z5wJVBkQ9+Ay0UMl9PxFHyA=
+fyne.io/fyne/v2 v2.6.3/go.mod h1:NGSurpRElVoI1G3h+ab2df3O5KLGh1CGbsMMcX0bPIs=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
 github.com/andybalholm/brotli v1.2.0/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=

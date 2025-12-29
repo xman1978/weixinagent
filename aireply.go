@@ -2,40 +2,55 @@ package main
 
 import (
 	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
-func generateReplyContentV2(videoDescription string, commentContent string) (*string, error) {
-	systemPrompt := `你是一名资深自媒体运营，擅长结合主播的个人身份和气质与粉丝评论内容，精准、共情地撰写评论回复。
-	你需要回复的视频主题按时间线分为五个阶段：
-	 - 第一阶段是原生家庭的伤害，关键词为亲情伤害，父亲的粗心，母亲的自私和偏心，母亲的殴打和辱骂，大哥的疼爱，侄子的贴心，童年二哥的陪伴，姐姐的恶毒和陷害，三哥和三嫂的势利，妹妹的悲惨；
-	 - 第二阶段为求学经历，关键词为聪明，努力，天赋；
-	 - 第三阶段为职场经历，关键词为奋斗，积极向上，外企经历，被排挤，被孤立，被欺骗；
-	 - 第四阶段为创业经历，关键词为拼搏，辛苦，被欺骗；
-	 - 第五阶段是婚姻家庭经历，关键词为婚姻，家庭，老公，婆婆，试管，怀孕。
-	回复内容的要求：
-	 - 回复内容字数不超过 20 字。
-	 - 回复内容要符合博主的个人身份和气质：45 岁中年女性博主形象，性格沉稳、高知、谦虚和善、关心他人、礼貌周全。
-	 - 去除回复内容中小女生气质的语气词，如“啊”，“呀”，“喔”，“哈”，“哟”，“哦”，“哒”，“呢”等。
-	 - 按下面场景化回复规则进行回复。
-	场景化回复规则：
-	- 面对有相似原生家庭伤害经历的网友,如果他的评论在描述相似的经历，你的回复必含 “抱抱你，给你温暖” 或 “我特别理解你的感受” 类共情表述。
-	- 面对无法理解原生家庭伤害的网友：用温和语气回复，可选 “您一定很幸福，有爱你的妈妈”“世界很大，什么样的人都有”“不是所有妈妈都爱孩子”。
-	- 面对有相似职场背刺经历的网友,如果他的评论中有描述相似的经历，你的回复必含 “您一定很委屈” 或 “希望您可以早日走出阴影” 类共情表述。
-	- 面对无法理解职场背刺经历的网友：用温和语气回复，可选 “谢谢你的看法”“谢谢你的建议”“没关系，你没遇到过，说明你的环境更舒心”。
-	- 面对支持和安慰博主的网友：用温和语气回复，可选 “谢谢您的支持[握手]”“谢谢您的关注[爱心]”“谢谢您的鼓励[加油]”“谢谢您的称赞[爱心]”“谢谢您的安慰[拥抱]”“谢谢您的善良[爱心]”。
-	- 面对批评博主的网友：用温和语气回复，可选 “谢谢您的建议”“谢谢您的批评”“谢谢您的提醒”“谢谢您的指正”“谢谢您的帮助”。
-	- 对无明确方向的评论：可以回复 “谢谢您的评论[握手]”。`
+type Config struct {
+	Prompt PromptConfig `yaml:"prompt"`
+	Llmapi LlmapiConfig `yaml:"llmapi"`
+}
 
-	userPrompt := `视频描述：` + videoDescription + `\n评论内容：` + commentContent
+type PromptConfig struct {
+	SystemPrompt string `yaml:"systemPrompt"`
+	UserPrompt   string `yaml:"userPrompt"`
+}
+
+type LlmapiConfig struct {
+	ModelName           string  `yaml:"modelName"`
+	APIKey              string  `yaml:"apiKey"`
+	BaseURL             string  `yaml:"baseURL"`
+	FrequencyPenalty    float64 `yaml:"frequencyPenalty"`
+	TopP                float64 `yaml:"topP"`
+	Temperature         float64 `yaml:"temperature"`
+	MaxCompletionTokens int64   `yaml:"maxCompletionTokens"`
+}
+
+func generateReplyContentV2(commentContent string) (*string, error) {
+	data, err := os.ReadFile("config.yml")
+	if err != nil {
+		panic(fmt.Errorf("无法读取配置文件: %w", err))
+	}
+
+	var config Config
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		panic(fmt.Errorf("YAML 解析失败: %w", err))
+	}
+
+	systemPrompt := config.Prompt.SystemPrompt
+
+	userPrompt := config.Prompt.UserPrompt + commentContent
 
 	params := OpenAIParams{
-		ModeName:            "ep-20250916104034-k9prt",
-		APIKey:              "b8c7ff23-1fae-4e5a-9385-6de7d95dc0b9",
-		BaseURL:             "https://ark.cn-beijing.volces.com/api/v3",
-		FrequencyPenalty:    1.2,
-		TopP:                0.7,
-		MaxCompletionTokens: 4096,
-		Temperature:         1,
+		ModeName:            config.Llmapi.ModelName,
+		APIKey:              config.Llmapi.APIKey,
+		BaseURL:             config.Llmapi.BaseURL,
+		FrequencyPenalty:    config.Llmapi.FrequencyPenalty,
+		TopP:                config.Llmapi.TopP,
+		MaxCompletionTokens: config.Llmapi.MaxCompletionTokens,
+		Temperature:         config.Llmapi.Temperature,
 	}
 
 	reply, err := openaiReply(&params, systemPrompt, userPrompt)
