@@ -51,14 +51,37 @@ func getVideoList(cookies []*network.Cookie, pageSize int, currentPage int) (*[]
 		return nil, 0, fmt.Errorf("解析 VideoList JSON失败: %v", err)
 	}
 
+	// fmt.Printf("获取视频列表: %v\n", v.Data.List)
+
 	var videoList []VideoList
 	for _, list := range v.Data.List {
+		// 安全获取 CoverUrl
+		coverUrl := ""
+		if len(list.Desc.Media) > 0 {
+			coverUrl = list.Desc.Media[0].CoverUrl
+		}
+
+		// 安全获取 ShortTitle
+		shortTitle := "未知标题"
+		if len(list.Desc.ShortTitle) > 0 {
+			shortTitle = list.Desc.ShortTitle[0].Title
+		}
+
+		// 安全获取 Description（字符串类型，如果为空则已经是空字符串）
+		description := list.Desc.Description
+
+		// 安全获取 CreateTime（检查是否为 0 或无效值）
+		createTime := "2000-01-01 00:00:00"
+		if list.CreateTime > 0 {
+			createTime = time.Unix(list.CreateTime, 0).Format("2006-01-02 15:04:05")
+		}
+
 		videoList = append(videoList, VideoList{
 			ObjectId:    list.ObjectId,
-			CreateTime:  time.Unix(list.CreateTime, 0).Format("2006-01-02 15:04:05"),
-			CoverUrl:    list.Desc.Media[0].CoverUrl,
-			ShortTitle:  list.Desc.ShortTitle[0].Title,
-			Description: list.Desc.Description,
+			CreateTime:  createTime,
+			CoverUrl:    coverUrl,
+			ShortTitle:  shortTitle,
+			Description: description,
 		})
 	}
 

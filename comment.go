@@ -45,16 +45,16 @@ type CommentItem struct {
 	LikeFlag          int                   `json:"likeFlag"`
 }
 
-func getVideoComments(cookies []*network.Cookie, objectId string) (*[]CommentItem, error) {
+func getVideoComments(cookies []*network.Cookie, objectId string, lastBuff string) (*[]CommentItem, *string, error) {
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
 	url := "/micro/interaction/cgi-bin/mmfinderassistant-bin/comment/comment_list"
-	payload := `{"lastBuff":"","exportId":"%s","commentSelection":false,"forMcn":false,"timestamp":"%s","_log_finder_uin":"","_log_finder_id":"%s","rawKeyBuff":null,"pluginSessionId":null,"scene":7,"reqScene":7}`
-	payload = fmt.Sprintf(payload, objectId, timestamp, finderUsername)
+	payload := `{"lastBuff":"%s","exportId":"%s","commentSelection":false,"forMcn":false,"timestamp":"%s","_log_finder_uin":"","_log_finder_id":"%s","rawKeyBuff":null,"pluginSessionId":null,"scene":7,"reqScene":7}`
+	payload = fmt.Sprintf(payload, lastBuff, objectId, timestamp, finderUsername)
 
 	bodyString, err := requestUrl(url, payload, cookies)
 	if err != nil {
-		return nil, fmt.Errorf("获取视频评论列表失败: %v", err)
+		return nil, nil, fmt.Errorf("获取视频评论列表失败: %v", err)
 	}
 
 	var v struct {
@@ -66,10 +66,10 @@ func getVideoComments(cookies []*network.Cookie, objectId string) (*[]CommentIte
 		} `json:"data"`
 	}
 	if err := json.Unmarshal([]byte(*bodyString), &v); err != nil {
-		return nil, fmt.Errorf("解析 CommentList JSON失败: %v", err)
+		return nil, nil, fmt.Errorf("解析 CommentList JSON失败: %v", err)
 	}
 
-	return &v.Data.Comment, nil
+	return &v.Data.Comment, &v.Data.LastBuff, nil
 }
 
 type ReplyCommentItem struct {

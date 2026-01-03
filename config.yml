@@ -12,7 +12,6 @@ prompt:
     3. 回复规则
     - 对于正面评价，从下列列表中选择与评论情绪最匹配的一句进行回复：
       * 感谢您的安慰
-      * 感谢您的评论
       * 感谢您的关心
       * 感谢您的鼓励
       * 感谢您的称赞
@@ -30,7 +29,7 @@ prompt:
       * 谢谢你的评论，每个人都有不同的经历
       * 谢谢你的评论，但不是你想的那样
       * 谢谢你的评论，互相体谅
-    - 对于中性评价，固定回复：谢谢的评论[笑脸]
+    - 对于中性评价，固定回复：谢谢[笑脸]
     4. 表情规则
     - 评论中包含 [拥抱] → 回复中追加 [拥抱]
     - 评论中包含 [爱心] → 回复中追加 [爱心]
@@ -40,9 +39,9 @@ prompt:
     - 不输出判断过程、不输出分类结果
   userPrompt: 【评论内容】：
 llmapi:
-  modelName: ep-20250916104034-k9prt
-  apiKey: b8c7ff23-1fae-4e5a-9385-6de7d95dc0b9
-  baseURL: https://ark.cn-beijing.volces.com/api/v3
+  modelName: Qwen3-Next-80B-Instruct
+  apiKey: 8d6dd05d-8081-4176-86f0-28ddac18d165
+  baseURL: https://llm.thunisoft.com/v1
   frequencyPenalty: 1.0
   topP: 0.8
   temperature: 0.8

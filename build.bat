@@ -9,9 +9,9 @@ set VERSION=0.1.5
 REM ================================
 REM Windows 64-bit
 REM ================================
-REM set GOOS=windows
-REM set GOARCH=amd64
-REM go build -o bin\weixinagent-win-amd64-%VERSION%.exe .
+set GOOS=windows
+set GOARCH=amd64
+go build -o bin\weixinagent-win-amd64-%VERSION%.exe .
 
 REM ================================
 REM Linux 64-bit

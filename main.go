@@ -31,43 +31,62 @@ func replyWeixinChannelComment(cookies []*network.Cookie, out chan<- string, don
 	for currentPage := 1; currentPage <= Pages; currentPage++ {
 		for _, video := range *videoList {
 			out <- fmt.Sprintf("视频: %s %s", video.ShortTitle, video.Description)
+			out <- "=============================================================="
 			// fmt.Println("视频: ", video.ShortTitle, video.Description, video.ObjectId)
 			// fmt.Println("获取视频评论：")
-			comments, err := getVideoComments(cookies, video.ObjectId)
-			if err != nil {
-				done <- fmt.Errorf("获取视频评论失败 ## %v", err)
-				close(done)
-				return
-			}
-			// fmt.Println("评论列表: ", *comments)
-			out <- "--------------------------------"
-
-			for _, comment := range *comments {
-				if len(comment.LevelTwoComment) > 0 || strings.TrimSpace(comment.CommentContent) == "" || strings.TrimSpace(comment.CommentNickname) == nickName {
-					continue
-				}
-
-				out <- fmt.Sprintf("评论内容: %s", comment.CommentContent)
-				replyContent, err := generateReplyContentV2(comment.CommentContent)
+			lastBuff := ""
+			for {
+				comments, lastBuffPtr, err := getVideoComments(cookies, video.ObjectId, lastBuff)
 				if err != nil {
-					done <- fmt.Errorf("生成回复内容失败 ## %v", err)
+					done <- fmt.Errorf("获取视频评论失败 ## %v", err)
 					close(done)
-					return
+					break
 				}
-				out <- fmt.Sprintf("AI 生成的回复内容: %s", *replyContent)
 
-				replyComment, err := replyComment(cookies, video.ObjectId, comment, *replyContent)
-				if err != nil {
-					out <- fmt.Sprintf("回复评论失败 ## %v", err)
-					continue
+				// 如果评论列表为空，则跳出循环，否则继续获取下一个视频的评论
+				if len(*comments) == 0 {
+					break
 				}
-				replyCount++
-				out <- fmt.Sprintf("已回复，回复内容: %s", replyComment.CommentContent)
-				out <- "=========================================="
 
-				// 在 30 到 90 秒之间随机等待
-				out <- "等待 30 到 60 秒之间随机等待..."
-				time.Sleep(time.Duration(rand.Intn(30)+30) * time.Second)
+				// fmt.Println("评论列表: ", *comments)
+				out <- "----------------------------------------------------------"
+
+				for _, comment := range *comments {
+					out <- fmt.Sprintf("待回复评论内容: %s - %s -- 已有 %d 条回复\n", comment.CommentNickname, comment.CommentContent, len(comment.LevelTwoComment))
+					if len(comment.LevelTwoComment) > 0 || strings.TrimSpace(comment.CommentContent) == "" || strings.TrimSpace(comment.CommentNickname) == nickName {
+						out <- "评论已回复或评论内容为空或评论者为本人，跳过"
+						continue
+					}
+
+					// out <- fmt.Sprintf("评论内容: %s", comment.CommentContent)
+					replyContent, err := generateReplyContentV2(comment.CommentContent)
+					if err != nil {
+						done <- fmt.Errorf("生成回复内容失败 ## %v", err)
+						close(done)
+						return
+					}
+					out <- fmt.Sprintf("AI 生成的回复内容: %s", *replyContent)
+
+					replyComment, err := replyComment(cookies, video.ObjectId, comment, *replyContent)
+					if err != nil {
+						out <- fmt.Sprintf("回复评论失败 ## %v", err)
+						continue
+					}
+					replyCount++
+					out <- fmt.Sprintf("已回复，回复内容: %s", replyComment.CommentContent)
+					out <- "----------------------------------------------------------"
+
+					// 在 10 到 30 秒之间随机等待
+					out <- "等待 10 到 30 秒之间随机等待..."
+					time.Sleep(time.Duration(rand.Intn(20)+10) * time.Second)
+					out <- "等待完成"
+				}
+
+				// 如果 lastBuff 为空，则跳出循环，否则继续获取下一页评论
+				if *lastBuffPtr == "" {
+					break
+				}
+				lastBuff = *lastBuffPtr
 			}
 		}
 
