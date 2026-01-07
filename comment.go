@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -114,7 +117,42 @@ func sanitizeControlChars(s string) string {
 	return buf.String()
 }
 
-func replyComment(cookies []*network.Cookie, objectId string, commentItem CommentItem, replyContent string) (*ReplyCommentItem, error) {
+func replyComment(cookies []*network.Cookie, objectId string, commentItem CommentItem) (*ReplyCommentItem, error) {
+	replied := false
+	if len(commentItem.LevelTwoComment) > 0 {
+		for _, levelTwoComment := range commentItem.LevelTwoComment {
+			// 如果评论已回复，则标记为已回复
+			if strings.TrimSpace(levelTwoComment.CommentNickname) == nickName {
+				replied = true
+			}
+			// 回复二级评论
+			levelTowCommentItem := CommentItem{
+				LevelTwoComment:   []LevelTwoCommentItem{},
+				CommentId:         levelTwoComment.CommentId,
+				CommentNickname:   levelTwoComment.CommentNickname,
+				CommentContent:    levelTwoComment.CommentContent,
+				CommentHeadurl:    levelTwoComment.CommentHeadurl,
+				CommentCreatetime: levelTwoComment.CommentCreatetime,
+				CommentLikeCount:  0,
+				LastBuff:          levelTwoComment.LastBuff,
+				DownContinueFlag:  levelTwoComment.DownContinueFlag,
+				VisibleFlag:       levelTwoComment.VisibleFlag,
+				ReadFlag:          levelTwoComment.ReadFlag,
+				DisplayFlag:       levelTwoComment.DisplayFlag,
+				BlacklistFlag:     levelTwoComment.BlacklistFlag,
+				LikeFlag:          levelTwoComment.LikeFlag,
+			}
+			replyComment(cookies, objectId, levelTowCommentItem)
+		}
+	}
+
+	// 如果评论内容为空或评论者为本人，则返回
+	if strings.TrimSpace(commentItem.CommentContent) == "" ||
+		strings.TrimSpace(commentItem.CommentNickname) == nickName ||
+		replied == true {
+		return nil, fmt.Errorf("已回复")
+	}
+
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	clientId := uuid.New().String()
 
@@ -123,10 +161,16 @@ func replyComment(cookies []*network.Cookie, objectId string, commentItem Commen
 
 	// log.Println("回复评论请求参数: ", payload)
 
+	replyContent, err := generateReplyContentV2(commentItem.CommentContent)
+	if err != nil {
+		return nil, fmt.Errorf("生成回复内容失败 ## %v", err)
+	}
+	// fmt.Sprintf("AI 生成的回复内容: %s", *replyContent)
+
 	url := "/micro/interaction/cgi-bin/mmfinderassistant-bin/comment/create_comment"
 	payload := ReplyCommentPayload{
 		ReplyCommentId:  commentItem.CommentId,
-		Content:         sanitizeControlChars(replyContent),
+		Content:         sanitizeControlChars(*replyContent),
 		ClientId:        clientId,
 		RootCommentId:   commentItem.CommentId,
 		Comment:         commentItem,
@@ -162,6 +206,16 @@ func replyComment(cookies []*network.Cookie, objectId string, commentItem Commen
 	if err := json.Unmarshal([]byte(*bodyString), &v); err != nil {
 		return nil, fmt.Errorf("解析 ReplyCommentItem JSON失败: %v", err)
 	}
+
+	log.Println("--------------------------------------------------------")
+	log.Printf("待回复评论内容: %s - %s", commentItem.CommentNickname, commentItem.CommentContent)
+	log.Printf("回复内容: %s", v.Data.Comment.CommentContent)
+	log.Println("--------------------------------------------------------")
+
+	// 在 5 到 30 秒之间随机等待
+	log.Println("等待 5 到 30 秒之间随机等待...")
+	time.Sleep(time.Duration(rand.Intn(20)+5) * time.Second)
+	log.Println("等待完成")
 
 	return &v.Data.Comment, nil
 }
